@@ -1,0 +1,16 @@
+- id: '1767542637517'
+  alias: Toggle Light Manually
+  description: ''
+  triggers:
+  - trigger: event
+    event_type: ''
+    context: {}
+  conditions: []
+  actions:
+  - action: light.toggle
+    metadata: {}
+    target:
+      device_id: 4f23449fa69c5d646172617677385bd4
+    data:
+      brightness_pct: 100
+  mode: single

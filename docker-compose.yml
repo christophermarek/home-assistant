@@ -1,0 +1,45 @@
+services:
+  homeassistant:
+    image: ${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:stable}
+    container_name: ${HA_CONTAINER_NAME:-homeassistant}
+    privileged: true
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/New_York}
+    volumes:
+      - ${CONFIG_DIR:-./config}:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${HA_PORT:-8123}:8123"
+    networks:
+      - homeassistant
+
+  whisper:
+    image: ${WHISPER_IMAGE:-rhasspy/wyoming-whisper:latest}
+    container_name: ${WHISPER_CONTAINER_NAME:-whisper}
+    restart: unless-stopped
+    command: --model ${WHISPER_MODEL:-tiny-int8} --language ${WHISPER_LANGUAGE:-en}
+    volumes:
+      - ${WHISPER_DATA_DIR:-./data/whisper}:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${WHISPER_PORT:-10300}:10300"
+    networks:
+      - homeassistant
+
+  piper:
+    image: ${PIPER_IMAGE:-rhasspy/wyoming-piper:latest}
+    container_name: ${PIPER_CONTAINER_NAME:-piper}
+    restart: unless-stopped
+    command: --voice ${PIPER_VOICE:-en_US-lessac-medium}
+    volumes:
+      - ${PIPER_DATA_DIR:-./data/piper}:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${PIPER_PORT:-10200}:10200"
+    networks:
+      - homeassistant
+
+networks:
+  homeassistant:
+    driver: bridge
