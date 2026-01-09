@@ -10,9 +10,14 @@ Write-Host "Wyoming Satellite" -ForegroundColor Cyan
 Write-Host "=================" -ForegroundColor Cyan
 Write-Host ""
 
-$wslList = wsl --list --quiet 2>&1
-if (-not ($wslList -match "Ubuntu")) {
-    Write-Host "ERROR: Ubuntu not installed. Run setup.ps1 first." -ForegroundColor Red
+try {
+    $null = wsl -d Ubuntu -- echo "test" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Ubuntu not installed or not accessible. Run setup.ps1 first." -ForegroundColor Red
+        exit 1
+    }
+} catch {
+    Write-Host "ERROR: Cannot access Ubuntu. Run setup.ps1 first." -ForegroundColor Red
     exit 1
 }
 
