@@ -44,7 +44,7 @@ services:
     image: ${WAKE_WORD_IMAGE:-rhasspy/wyoming-openwakeword:latest}
     container_name: ${WAKE_WORD_CONTAINER_NAME:-wake-word}
     restart: unless-stopped
-    command: --model ${WAKE_WORD_MODEL:-ok_nabu}
+    command: --preload-model ok_nabu --preload-model hey_jarvis
     volumes:
       - ${WAKE_WORD_DATA_DIR:-./data/wake-word}:/data
       - /etc/localtime:/etc/localtime:ro

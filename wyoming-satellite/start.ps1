@@ -51,6 +51,26 @@ Write-Host ""
 Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
 Write-Host ""
 
-$cmd = "cd ~/wyoming-satellite && source .venv/bin/activate && python -m wyoming_satellite --name '$Name' --uri tcp://0.0.0.0:$Port --mic-command 'parec --rate=16000 --channels=1 --format=s16le --raw' --snd-command 'paplay --rate=22050 --channels=1 --format=s16le --raw'"
+$soundsDir = "~/wyoming-satellite/sounds"
+$awakeWav = "$soundsDir/awake.wav"
+$doneWav = "$soundsDir/done.wav"
+
+Write-Host "Checking for sound files..." -ForegroundColor Yellow
+$setupSounds = @"
+mkdir -p ~/wyoming-satellite/sounds
+if [ ! -f ~/wyoming-satellite/sounds/awake.wav ]; then
+    echo 'Downloading awake sound...'
+    wget -q -O ~/wyoming-satellite/sounds/awake.wav 'https://github.com/rhasspy/wyoming-satellite/raw/master/sounds/awake.wav' 2>/dev/null || \
+    curl -sL -o ~/wyoming-satellite/sounds/awake.wav 'https://github.com/rhasspy/wyoming-satellite/raw/master/sounds/awake.wav'
+fi
+if [ ! -f ~/wyoming-satellite/sounds/done.wav ]; then
+    echo 'Downloading done sound...'
+    wget -q -O ~/wyoming-satellite/sounds/done.wav 'https://github.com/rhasspy/wyoming-satellite/raw/master/sounds/done.wav' 2>/dev/null || \
+    curl -sL -o ~/wyoming-satellite/sounds/done.wav 'https://github.com/rhasspy/wyoming-satellite/raw/master/sounds/done.wav'
+fi
+"@
+wsl -d Ubuntu -- bash -c $setupSounds
+
+$cmd = "cd ~/wyoming-satellite && source .venv/bin/activate && python -m wyoming_satellite --name '$Name' --uri tcp://0.0.0.0:$Port --mic-command 'parec --rate=16000 --channels=1 --format=s16le --raw' --snd-command 'paplay --rate=22050 --channels=1 --format=s16le --raw' --awake-wav $awakeWav --done-wav $doneWav"
 
 wsl -d Ubuntu -- bash -c $cmd
