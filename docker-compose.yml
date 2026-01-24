@@ -53,6 +53,22 @@ services:
     networks:
       - homeassistant
 
+  esphome:
+    image: ${ESPHOME_IMAGE:-ghcr.io/esphome/esphome:stable}
+    container_name: ${ESPHOME_CONTAINER_NAME:-esphome}
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - ${ESPHOME_CONFIG_DIR:-./config/esphome}:/config
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${ESPHOME_PORT:-6052}:6052"
+    environment:
+      - USERNAME=${ESPHOME_USERNAME:-}
+      - PASSWORD=${ESPHOME_PASSWORD:-}
+    networks:
+      - homeassistant
+
 networks:
   homeassistant:
     driver: bridge
