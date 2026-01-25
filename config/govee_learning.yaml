@@ -14,7 +14,7 @@
   before_set_brightness_turn_on: false
   config_offline_is_off: false
 5D:B8:98:17:3C:2E:1E:FC:
-  set_brightness_max:
+  set_brightness_max: 100
   get_brightness_max: 100
   before_set_brightness_turn_on: false
   config_offline_is_off: false

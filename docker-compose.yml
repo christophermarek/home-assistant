@@ -4,70 +4,70 @@ services:
     container_name: ${HA_CONTAINER_NAME:-homeassistant}
     privileged: true
     restart: unless-stopped
+    network_mode: host
     environment:
       - TZ=${TZ:-America/New_York}
     volumes:
       - ${CONFIG_DIR:-./config}:/config
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "${HA_PORT:-8123}:8123"
-    networks:
-      - homeassistant
 
   whisper:
     image: ${WHISPER_IMAGE:-rhasspy/wyoming-whisper:latest}
     container_name: ${WHISPER_CONTAINER_NAME:-whisper}
     restart: unless-stopped
+    network_mode: host
     command: --model ${WHISPER_MODEL:-tiny-int8} --language ${WHISPER_LANGUAGE:-en}
     volumes:
       - ${WHISPER_DATA_DIR:-./data/whisper}:/data
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "${WHISPER_PORT:-10300}:10300"
-    networks:
-      - homeassistant
 
   piper:
     image: ${PIPER_IMAGE:-rhasspy/wyoming-piper:latest}
     container_name: ${PIPER_CONTAINER_NAME:-piper}
     restart: unless-stopped
+    network_mode: host
     command: --voice ${PIPER_VOICE:-en_US-lessac-medium}
     volumes:
       - ${PIPER_DATA_DIR:-./data/piper}:/data
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "${PIPER_PORT:-10200}:10200"
-    networks:
-      - homeassistant
 
   wake-word:
     image: ${WAKE_WORD_IMAGE:-rhasspy/wyoming-openwakeword:latest}
     container_name: ${WAKE_WORD_CONTAINER_NAME:-wake-word}
     restart: unless-stopped
+    network_mode: host
     command: --preload-model ok_nabu --preload-model hey_jarvis
     volumes:
       - ${WAKE_WORD_DATA_DIR:-./data/wake-word}:/data
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "${WAKE_WORD_PORT:-10400}:10400"
-    networks:
-      - homeassistant
 
   esphome:
     image: ${ESPHOME_IMAGE:-ghcr.io/esphome/esphome:stable}
     container_name: ${ESPHOME_CONTAINER_NAME:-esphome}
     restart: unless-stopped
     privileged: true
+    network_mode: host
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
     volumes:
       - ${ESPHOME_CONFIG_DIR:-./config/esphome}:/config
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "${ESPHOME_PORT:-6052}:6052"
     environment:
       - USERNAME=${ESPHOME_USERNAME:-}
       - PASSWORD=${ESPHOME_PASSWORD:-}
-    networks:
-      - homeassistant
+
+  scrypted:
+    image: ${SCRYPTED_IMAGE:-ghcr.io/koush/scrypted:latest}
+    container_name: ${SCRYPTED_CONTAINER_NAME:-scrypted}
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ${SCRYPTED_DATA_DIR:-./data/scrypted}:/server/volume
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=${TZ:-America/New_York}
+      - SCRYPTED_DOCKER_AVAHI=${SCRYPTED_DOCKER_AVAHI:-false}
+      - SCRYPTED_NVR_VOLUME=${SCRYPTED_NVR_VOLUME:-}
 
 networks:
   homeassistant:

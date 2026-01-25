@@ -63,3 +63,13 @@ After flashing your ESP device with ESPHome firmware, add it to Home Assistant:
    - Enter the encryption key if you set one in your ESPHome configuration
 
 Once added, all entities (sensors, switches, lights, etc.) from your ESPHome device will automatically appear in Home Assistant.
+
+**Scrypted NVR:**
+Access Scrypted at https://localhost:10443 to configure cameras and NVR functionality. Scrypted provides camera integration with HomeKit, Google Home, Alexa, and Home Assistant. To integrate Scrypted with Home Assistant:
+
+1. Go to Settings > Devices & Services > Add Integration
+2. Search for "Scrypted"
+3. Enter the Scrypted server URL (e.g., `http://localhost:10444` for HTTP or `https://localhost:10443` for HTTPS)
+4. Follow the setup wizard to complete the integration
+
+Scrypted data is stored in `./data/scrypted/`. For NVR storage, configure the `SCRYPTED_NVR_VOLUME` environment variable in your Makefile or docker-compose.yml.

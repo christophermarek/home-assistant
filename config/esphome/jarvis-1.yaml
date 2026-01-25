@@ -1,0 +1,414 @@
+esphome:
+  name: jarvis-1
+  friendly_name: Jarvis 1
+
+esp32:
+  board: nodemcu-32s
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERBOSE
+  logs:
+    speaker: VERBOSE
+    i2s_audio: VERBOSE
+    media_player: VERBOSE
+    speaker_media_player: VERBOSE
+    audio_pipeline: VERBOSE
+    http_request: VERBOSE
+    voice_assistant: VERBOSE
+    esp_tls: VERBOSE
+    transport_base: VERBOSE
+
+api:
+  id: api_client
+  max_connections: 12
+  max_send_queue: 32
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+safe_mode:
+
+status_led:
+  pin:
+    number: GPIO4
+    inverted: true
+
+debug:
+  update_interval: 30s
+
+interval:
+  - interval: 5min
+    then:
+      - logger.log: "Health check: Uptime=${uptime_sensor.state}s, Free Heap=${free_heap_sensor.state} bytes, WiFi RSSI=${wifi_rssi_sensor.state} dBm"
+
+sensor:
+  - platform: uptime
+    name: "Uptime"
+    id: uptime_sensor
+    update_interval: 30s
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_signal_sensor
+    update_interval: 30s
+
+  - platform: debug
+    free:
+      name: "Free Heap"
+      id: free_heap_sensor
+    block:
+      name: "Heap Max Block"
+
+  - platform: template
+    name: "WiFi RSSI"
+    id: wifi_rssi_sensor
+    lambda: |-
+      return id(wifi_signal_sensor).state;
+    update_interval: 30s
+    unit_of_measurement: "dBm"
+
+  - platform: template
+    name: "Loop Time"
+    id: loop_time_sensor
+    lambda: |-
+      return id(loop_time);
+    update_interval: 30s
+    unit_of_measurement: "ms"
+    accuracy_decimals: 2
+
+  - platform: template
+    name: "Watchdog Time"
+    id: watchdog_time_sensor
+    lambda: |-
+      return id(watchdog_time);
+    update_interval: 30s
+    unit_of_measurement: "ms"
+    accuracy_decimals: 2
+
+  - platform: template
+    name: "Voice Assistant Errors"
+    id: va_error_count
+    lambda: |-
+      return id(va_error_counter);
+    update_interval: 60s
+
+  - platform: template
+    name: "Media Player Errors"
+    id: mp_error_count
+    lambda: |-
+      return id(mp_error_counter);
+    update_interval: 60s
+
+  - platform: template
+    name: "HTTP Connection Errors"
+    id: http_error_count
+    lambda: |-
+      return id(http_error_counter);
+    update_interval: 60s
+
+number:
+  - platform: template
+    name: "Speaker Volume"
+    min_value: 0
+    max_value: 100
+    step: 5
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: 100.0
+    set_action:
+      - lambda: |-
+          id(speaker_volume) = x;
+          ESP_LOGI("volume", "Speaker volume set to %.0f%%", x);
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+    ssid:
+      name: "WiFi SSID"
+    mac_address:
+      name: "MAC Address"
+
+  - platform: template
+    name: "Last Restart Reason"
+    id: restart_reason_text
+    lambda: |-
+      return id(last_restart_reason);
+    update_interval: 60s
+
+  - platform: template
+    name: "ESP32 Chip Info"
+    lambda: |-
+      return std::string("ESP32");
+    update_interval: 5min
+
+  - platform: template
+    name: "Firmware Version"
+    lambda: |-
+      return std::string(ESPHOME_VERSION);
+    update_interval: 5min
+
+binary_sensor:
+  - platform: status
+    name: "Status"
+
+  - platform: template
+    name: "WiFi Connected"
+    lambda: |-
+      return id(wifi_component).is_connected();
+
+  - platform: template
+    name: "API Connected"
+    lambda: |-
+      return id(api_client).is_connected();
+
+  - platform: template
+    name: "Low Memory Warning"
+    lambda: |-
+      return id(free_heap_sensor).state < 50000;
+
+globals:
+  - id: loop_time
+    type: float
+    initial_value: '0.0'
+
+  - id: watchdog_time
+    type: float
+    initial_value: '0.0'
+
+  - id: va_error_counter
+    type: int
+    initial_value: '0'
+
+  - id: mp_error_counter
+    type: int
+    initial_value: '0'
+
+  - id: http_error_counter
+    type: int
+    initial_value: '0'
+
+  - id: last_restart_reason
+    type: std::string
+    initial_value: '"unknown"'
+
+  - id: speaker_volume
+    type: float
+    initial_value: '100.0'
+
+wifi:
+  id: wifi_component
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  fast_connect: true
+  reboot_timeout: 15min
+  ap:
+    ssid: "Jarvis-1 Fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+  port: 80
+  include_internal: true
+  log: true
+
+i2s_audio:
+  id: i2s_bus
+  i2s_lrclk_pin: GPIO25
+  i2s_bclk_pin: GPIO26
+
+microphone:
+  - platform: i2s_audio
+    i2s_audio_id: i2s_bus
+    id: mic
+    adc_type: external
+    i2s_din_pin: GPIO33
+    channel: right
+    sample_rate: 16000
+
+speaker:
+  - platform: i2s_audio
+    i2s_audio_id: i2s_bus
+    id: i2s_speaker
+    dac_type: external
+    i2s_dout_pin: GPIO22
+    channel: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    bits_per_channel: 16bit
+    i2s_comm_fmt: i2s_msb
+
+media_player:
+  - platform: speaker
+    id: jarvis_speaker
+    name: "Jarvis Speaker"
+    codec_support_enabled: true
+    volume_initial: 100%
+    volume_max: 100%
+    volume_min: 0%
+    volume_increment: 5%
+    announcement_pipeline:
+      speaker: i2s_speaker
+      format: WAV
+      sample_rate: 16000
+      num_channels: 1
+
+script:
+  - id: play_chime
+    then:
+      - logger.log: "Playing chime"
+      - lambda: |-
+          const int sample_rate = 16000;
+          const int duration_ms = 200;
+          const float frequency = 800.0;
+          const float media_volume = id(speaker_volume);
+          const float volume_scale = media_volume / 100.0;
+          const int samples = (sample_rate * duration_ms) / 1000;
+          std::vector<int16_t> audio_data;
+          audio_data.reserve(samples);
+          for (int i = 0; i < samples; i++) {
+            float t = (float)i / sample_rate;
+            float envelope = 1.0 - (float)i / samples;
+            int16_t sample = (int16_t)(sin(2.0 * M_PI * frequency * t) * envelope * 30000.0 * volume_scale);
+            audio_data.push_back(sample);
+          }
+          id(i2s_speaker).play((const uint8_t*)audio_data.data(), audio_data.size() * sizeof(int16_t));
+          ESP_LOGI("chime", "Chime played at %.0f%% volume", media_volume);
+
+  - id: test_speaker_tone
+    then:
+      - logger.log: "Testing speaker with tone - should hear beep"
+      - lambda: |-
+          const int sample_rate = 16000;
+          const int duration_ms = 500;
+          const float frequency = 440.0;
+          const float media_volume = id(speaker_volume);
+          const float volume_scale = media_volume / 100.0;
+          const int samples = (sample_rate * duration_ms) / 1000;
+          std::vector<int16_t> audio_data;
+          audio_data.reserve(samples);
+          for (int i = 0; i < samples; i++) {
+            float t = (float)i / sample_rate;
+            int16_t sample = (int16_t)(sin(2.0 * M_PI * frequency * t) * 30000.0 * volume_scale);
+            audio_data.push_back(sample);
+          }
+          id(i2s_speaker).play((const uint8_t*)audio_data.data(), audio_data.size() * sizeof(int16_t));
+          ESP_LOGI("test", "Tone generated: %d samples at %.0f%% volume", samples, media_volume);
+
+  - id: test_speaker_wav
+    then:
+      - logger.log: "Testing speaker with WAV file"
+      - media_player.play_media:
+          id: jarvis_speaker
+          media_url: "http://10.0.0.126:8123/local/test_mono_16k.wav"
+      - delay: 1s
+      - logger.log: "WAV test initiated"
+
+  - id: test_speaker_tts
+    then:
+      - logger.log: "Testing speaker with TTS"
+      - voice_assistant.start:
+
+  - id: test_passthrough
+    then:
+      - logger.log: "Starting passthrough test - speak into microphone"
+      - voice_assistant.start:
+
+  - id: reset_error_counters
+    then:
+      - logger.log: "Resetting error counters"
+      - lambda: |-
+          id(va_error_counter) = 0;
+          id(mp_error_counter) = 0;
+          id(http_error_counter) = 0;
+
+  - id: health_report
+    then:
+      - lambda: |-
+          ESP_LOGI("health", "=== Health Report ===");
+          ESP_LOGI("health", "Uptime: %.1f s", id(uptime_sensor).state);
+          ESP_LOGI("health", "Free Heap: %.0f bytes", id(free_heap_sensor).state);
+          ESP_LOGI("health", "WiFi RSSI: %.1f dBm", id(wifi_rssi_sensor).state);
+          ESP_LOGI("health", "VA Errors: %.0f", id(va_error_count).state);
+          ESP_LOGI("health", "MP Errors: %.0f", id(mp_error_count).state);
+          ESP_LOGI("health", "HTTP Errors: %.0f", id(http_error_count).state);
+          ESP_LOGI("health", "Loop Time: %.2f ms", id(loop_time_sensor).state);
+          ESP_LOGI("health", "===================");
+
+  - id: safe_restart
+    then:
+      - logger.log: "Restart functionality - use OTA or physical reset"
+
+button:
+  - platform: template
+    name: "Start Voice Assistant"
+    icon: "mdi:microphone"
+    on_press:
+      - voice_assistant.start:
+
+  - platform: template
+    name: "Test Speaker Tone"
+    icon: "mdi:sine-wave"
+    on_press:
+      - script.execute: test_speaker_tone
+
+  - platform: template
+    name: "Test Speaker WAV"
+    icon: "mdi:volume-high"
+    on_press:
+      - script.execute: test_speaker_wav
+
+  - platform: template
+    name: "Test Speaker TTS"
+    icon: "mdi:text-to-speech"
+    on_press:
+      - script.execute: test_speaker_tts
+
+  - platform: template
+    name: "Test Passthrough"
+    icon: "mdi:microphone-message"
+    on_press:
+      - script.execute: test_passthrough
+
+  - platform: template
+    name: "Health Report"
+    icon: "mdi:heart-pulse"
+    on_press:
+      - script.execute: health_report
+
+  - platform: template
+    name: "Reset Error Counters"
+    icon: "mdi:counter-reset"
+    on_press:
+      - script.execute: reset_error_counters
+
+  - platform: template
+    name: "Safe Restart"
+    icon: "mdi:restart"
+    on_press:
+      - script.execute: safe_restart
+
+voice_assistant:
+  microphone: mic
+  speaker: i2s_speaker
+  use_wake_word: false
+  on_listening:
+    - logger.log: "Voice assistant started listening"
+  on_start:
+    - logger.log: "Voice assistant session started"
+    - script.execute: play_chime
+  on_wake_word_detected:
+    - logger.log: "Wake word detected!"
+    - script.execute: play_chime
+  on_stt_end:
+    - logger.log: "Speech-to-text completed"
+  on_tts_end:
+    - logger.log: "Text-to-speech completed"
+  on_end:
+    - logger.log: "Voice assistant session ended"

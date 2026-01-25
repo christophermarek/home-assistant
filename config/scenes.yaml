@@ -1,0 +1,31 @@
+- name: Good Night
+  icon: mdi:weather-night
+  entities:
+    light.smart_led_bulb:
+      state: 'off'
+    light.smart_led_bulb_2:
+      state: 'off'
+    light.smart_led_bulb_3:
+      state: 'off'
+    light.smart_led_bulb_4:
+      state: 'off'
+    media_player.hisense_g218x_748f:
+      state: 'off'
+    media_player.playstation_5:
+      state: 'off'
+
+- name: Wake Up
+  icon: mdi:weather-sunny
+  entities:
+    light.smart_led_bulb:
+      state: 'on'
+      brightness: 255
+    light.smart_led_bulb_2:
+      state: 'on'
+      brightness: 255
+    light.smart_led_bulb_3:
+      state: 'on'
+      brightness: 255
+    light.smart_led_bulb_4:
+      state: 'on'
+      brightness: 255

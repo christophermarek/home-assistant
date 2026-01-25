@@ -1,0 +1,26 @@
+esphome:
+  name: jarvis-1
+  friendly_name: Jarvis 1
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Jarvis-1 Fallback"
+    password: !secret ap_password
+
+web_server:
+  port: 80
