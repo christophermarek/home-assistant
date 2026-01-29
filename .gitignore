@@ -15,6 +15,7 @@ config/deps/
 config/tts/
 config/.ios.conf
 config/.uuid
+config/backups/
 
 config/custom_components/**/__pycache__/
 config/custom_components/**/*.pyc

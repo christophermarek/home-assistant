@@ -1,16 +1,133 @@
-- id: '1767542637517'
-  alias: Toggle Light Manually
-  description: ''
-  triggers:
-  - trigger: event
-    event_type: ''
-    context: {}
-  conditions: []
-  actions:
-  - action: light.toggle
-    metadata: {}
-    target:
-      device_id: 4f23449fa69c5d646172617677385bd4
-    data:
-      brightness_pct: 100
+- id: good_night_scene
+  alias: Good Night Scene
+  description: Turn off all lights and set media players to standby
+  trigger:
+    - platform: event
+      event_type: good_night_scene_triggered
+  condition: []
+  action:
+    - service: light.turn_off
+      target:
+        domain: light
+    - service: media_player.turn_off
+      target:
+        entity_id:
+          - media_player.hisense_g218x_748f
+          - media_player.playstation_5
+  mode: single
+
+- id: wake_up_scene
+  alias: Wake Up Scene
+  description: Gradually turn on bedroom and living room lights
+  trigger:
+    - platform: event
+      event_type: wake_up_scene_triggered
+  condition: []
+  action:
+    - service: light.turn_on
+      target:
+        entity_id:
+          - light.smart_led_bulb
+          - light.smart_led_bulb_2
+          - light.smart_led_bulb_3
+          - light.smart_led_bulb_4
+      data:
+        brightness_pct: 30
+    - delay: '00:00:30'
+    - service: light.turn_on
+      target:
+        entity_id:
+          - light.smart_led_bulb
+          - light.smart_led_bulb_2
+          - light.smart_led_bulb_3
+          - light.smart_led_bulb_4
+      data:
+        brightness_pct: 60
+    - delay: '00:00:30'
+    - service: light.turn_on
+      target:
+        entity_id:
+          - light.smart_led_bulb
+          - light.smart_led_bulb_2
+          - light.smart_led_bulb_3
+          - light.smart_led_bulb_4
+      data:
+        brightness_pct: 100
+  mode: single
+
+- id: backup_reminder
+  alias: Backup Reminder
+  description: Notify if backup hasn't run in 7 days
+  trigger:
+    - platform: time
+      at: '09:00:00'
+  condition:
+    - condition: template
+      value_template: '{{ (as_timestamp(now()) - as_timestamp(states(''sensor.backup_last_successful_automatic_backup'')) | default(0)) > 604800 }}'
+  action:
+    - service: notify.persistent_notification
+      data:
+        message: Home Assistant backup hasn't run in over 7 days. Please check backup configuration.
+        title: Backup Reminder
+  mode: single
+
+- id: printer_low_toner_alert
+  alias: Printer Low Toner Alert
+  description: Notify when toner drops below 20%
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.hl_l2370dw_black_toner_remaining
+      below: 20
+  condition:
+    - condition: state
+      entity_id: sensor.hl_l2370dw_black_toner_remaining
+      state: unavailable
+      invert: true
+  action:
+    - service: notify.persistent_notification
+      data:
+        message: 'Printer toner is low ({{ states(''sensor.hl_l2370dw_black_toner_remaining'') }}% remaining). Please replace soon.'
+        title: Printer Low Toner Alert
+  mode: single
+
+- id: network_status_monitor
+  alias: Network Status Monitor
+  description: Alert if router goes offline or WAN status changes
+  trigger:
+    - platform: state
+      entity_id: sensor.cgm4981com_wan_status
+  condition:
+    - condition: or
+      conditions:
+        - condition: state
+          entity_id: sensor.cgm4981com_wan_status
+          state: Disconnected
+        - condition: state
+          entity_id: sensor.cgm4981com_wan_status
+          state: unknown
+  action:
+    - service: notify.persistent_notification
+      data:
+        message: 'Network WAN status has changed to: {{ states(''sensor.cgm4981com_wan_status'') }}'
+        title: Network Status Alert
+  mode: single
+
+- id: living_room_auto_off
+  alias: Living Room Auto-Off
+  description: Turn off living room switch after 2 hours if no activity
+  trigger:
+    - platform: state
+      entity_id: switch.living_room_switch
+      to: 'on'
+      for:
+        hours: 2
+  condition: []
+  action:
+    - service: switch.turn_off
+      target:
+        entity_id: switch.living_room_switch
+    - service: notify.persistent_notification
+      data:
+        message: Living room switch was automatically turned off after 2 hours of inactivity.
+        title: Auto-Off Notification
   mode: single
