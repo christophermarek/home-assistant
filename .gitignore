@@ -16,6 +16,7 @@ config/tts/
 config/.ios.conf
 config/.uuid
 config/backups/
+config/mqtt/passwd
 
 config/custom_components/**/__pycache__/
 config/custom_components/**/*.pyc
